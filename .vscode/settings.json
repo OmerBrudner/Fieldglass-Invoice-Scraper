@@ -1,0 +1,28 @@
+// {
+//     "editor.tokenColorCustomizations": {
+//       "textMateRules": [
+//         {
+//           "scope": "variable",
+//           "settings": {
+//             "foreground": "#ff00aa"  // Change this to your preferred color
+//           }
+//         },
+//         {
+//           "scope": "variable.other.readwrite",
+//           "settings": {
+//             "foreground": "#8400ff"  // Change this to your preferred color
+//           }
+//         }
+//       ]
+//     },
+//     "typescript.tsdk": "./node_modules/typescript/lib",
+//     "eslint.validate": [
+//       "javascript",
+//       "javascriptreact",
+//       "typescript",
+//       "typescriptreact"
+//     ],
+//     "prettier.singleQuote": true,
+//     "prettier.semi": false
+//   }
+  

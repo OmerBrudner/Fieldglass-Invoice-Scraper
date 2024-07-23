@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+  "configurations": [
+    
+
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug TypeScript",
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "program": "${workspaceFolder}/src/index.ts",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "envFile": "${workspaceFolder}/.env"
+      // "env": {
+      //   "DSN_SENTRY": "https://84296a3c48f295f10a955867390fc14a@o4507408063463424.ingest.us.sentry.io/4507408076570624"
+      // }
+    }
+  ]
+  }
