@@ -61,8 +61,6 @@ export async function getFieldglassInvoices(
     const ttl = 5 * 60 * 1000;
     const now = new Date().getTime();
     const expiration = now + ttl;
-    // cache the authentication data
-    // cacheSet(uniqueCacheKey, { authToken, expiration }, ttl);
     const authToken = await page.cookies();
     cacheSet(credentials, { authToken, expiration }, ttl);
 
