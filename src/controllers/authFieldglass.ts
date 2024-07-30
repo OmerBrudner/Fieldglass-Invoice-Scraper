@@ -1,9 +1,11 @@
+// import puppeteer from "puppeteer-extra"
+// import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import puppeteer from "puppeteer";
 import { FieldglassCredentials, FieldglassAuthentication } from "src/models/models.ts";
 import { cacheGet, cacheSet } from "../utils/cache.ts";
 import * as Sentry from '@sentry/node';
 import { createHash } from "crypto";
-import * as fs from 'fs/promises';
+import { sleep } from "../utils/utilFunctions.ts";
 
 function generateHashKey(credential: FieldglassCredentials): string {
     const hash = createHash('sha256');
@@ -29,9 +31,11 @@ export async function getFieldglassAuthentication(credentials: FieldglassCredent
         if (cookieStatement) {
             await page.click("#truste-consent-button");
         }
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+
+        await sleep(3);
         // Login
         await page.type('#usernameId_new', userName);
+        await sleep(1);
         await page.type('#passwordId_new', password);
         // Check if the cookie statement is present
         await Promise.all([

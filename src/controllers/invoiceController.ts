@@ -1,23 +1,34 @@
 import puppeteer from "puppeteer";
-import { FieldglassAuthentication, FieldglassInvoice } from "src/models/models.ts";
-import { getFieldglassInvoiceDetails, sleep } from "./invoiceServices.ts";
+import { FieldglassAuthentication, MontoInvoice } from "src/models/models.ts";
+import { getFieldglassInvoiceDetails, mapFieldglassToMontoInvoice } from "./invoiceServices.ts";
+import { sleep } from "../utils/utilFunctions.ts";
 import fetch from "node-fetch";
 
+/**
+ * using Puppeteer to fetch and parse HTML, and Cheerio to process it
+ * @param authentication 
+ * @param fromDate 
+ * @param toDate 
+ * @returns invoices of type MontoInvoice[]
+ */
+export async function getFieldglassInvoices(
+    authentication: FieldglassAuthentication, fromDate: string, toDate: string):
+    Promise<MontoInvoice[]> {
 
-export async function getFieldglassInvoices(authentication: FieldglassAuthentication, fromDate: string, toDate: string): Promise<FieldglassInvoice[]> {
-    // const { authToken } = authentication;
-    let invoices: FieldglassInvoice[] = [];
+    let invoices: MontoInvoice[] = [];
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 800 });
 
     // Set the authentication token in headers
     await page.setCookie(...authentication.authToken)
-
 
     // Navigate to the invoices page
     await page.goto(process.env.FG_INVOICES_URL!, {
         waitUntil: "networkidle2"
     });
+
+    // authToken = await page.cookies()
 
     // Input the date range for filtering invoices
     await page.waitForSelector('input[name="filterStartDate"]').then(async (el) => {
@@ -41,7 +52,9 @@ export async function getFieldglassInvoices(authentication: FieldglassAuthentica
     const dropdown_list = await page.waitForSelector('#dropdownlistWrappergridpagerlistpast_invoice_supplier_list', { visible: true });
     await dropdown_list!.click();
     await page.waitForSelector('#listitem7innerListBoxgridpagerlistpast_invoice_supplier_list > span', { visible: true });
+    await sleep(1);
     await page.click('#listitem7innerListBoxgridpagerlistpast_invoice_supplier_list > span');
+    await sleep(1);
 
     await page.waitForSelector('.jqxGridParent.fd-table');
     // Extract invoice links from the table
@@ -51,14 +64,15 @@ export async function getFieldglassInvoices(authentication: FieldglassAuthentica
     });
     console.log('invoiceLinks', invoicesLinks);
 
-    let newCookies = await page.cookies();
-    let cookiesObj = newCookies.reduce((acc, cookie) => {
-        // @ts-ignore
+    // getting an array of cookies objects and transforming it into a single object of cookies as key-value pairs
+    const newCookies = await page.cookies();
+    const cookiesObj: { [key: string]: string } = newCookies.reduce((acc: { [key: string]: string }, cookie) => {
         acc[cookie.name] = cookie.value;
         return acc;
-    });
+    }, {});
 
     for (const link of invoicesLinks) {
+        // check if the link is valid
         const response = await fetch(link, {
             "headers": {
                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -78,15 +92,35 @@ export async function getFieldglassInvoices(authentication: FieldglassAuthentica
             "body": null,
             "method": "GET"
         });
+        //check the response status - only 200 is valid
+        if (response.status !== 200) {
+            console.error(`Error while fetching the invoice details for ${link}`);
+            continue;
+        }
+        ``
         const html = await response.text();
         if (html) {
-            invoices.push(getFieldglassInvoiceDetails(html)); // to implement
+            const filedglassInvoice = getFieldglassInvoiceDetails(link, html);
+            const montoInvoice = mapFieldglassToMontoInvoice(filedglassInvoice);
+            invoices.push(montoInvoice);
         }
+
+        // get the cookies from the response headers
         const setCookies = response.headers.get('set-cookie');
         if (setCookies) {
-            const cookies = setCookies.split(';').map((cookie) => { const [key, value] = cookie.split('='); return { key, value }; });
+            // split the cookies and map them to an array of objects
+            const cookies = setCookies.split(';').map((cookie) => {
+                const parts = cookie.split('=');
+                if (parts.length === 2) {
+                    const [key, value] = parts;
+                    return { key: key.trim(), value: value.trim() };
+                } else {
+                    console.warn('Invalid cookie string:', cookie);  // Log invalid cookie strings
+                    return { key: '', value: '' };  // Return an empty object for invalid cookie strings
+                }
+            });
+            // updating the cookies object with the new cookies
             cookies.forEach((cookie) => {
-                // @ts-ignore
                 cookiesObj[cookie.key] = cookie.value;
             });
         }
@@ -96,5 +130,5 @@ export async function getFieldglassInvoices(authentication: FieldglassAuthentica
     // Close the browser
     await browser.close();
 
-    return invoices as FieldglassInvoice[];
+    return invoices;
 }

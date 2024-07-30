@@ -1,6 +1,4 @@
-
-import { Protocol } from "puppeteer";
-import { Cookie } from "../utils/puppeteer-types.ts";
+import { Cookie } from "puppeteer";
 
 export enum MontoInvoiceStatus {
     APPROVED = "Approved",
@@ -16,10 +14,29 @@ export type FieldglassInvoice = {
     invoice_number: string;
     po_number?: string;
     buyer: string;
-    status: MontoInvoiceStatus;
+    status: string;
     invoice_date: Date;
+    due_date?: Date;
     currency: string;
     total: number;
+};
+
+export type MontoInvoice = {
+    portal_name: string;
+    // type: MontoDataTypes;
+    id_on_portal: string;
+    invoice_number: string;
+    portal_invoice_number?: string;
+    po_number?: string;
+    buyer: string;
+    status: string;
+    invoice_date: Date;
+    due_date?: Date;
+    currency: string;
+    total: number;
+    portal_user_id?: string;
+    portal_user?: string;
+    username?: string;
 };
 
 // additional query parameters for date range, inorder to maintainthe original montoInvoice structure
@@ -40,7 +57,7 @@ export type FieldglassCredentials = {
 }
 
 export type FieldglassAuthentication = {
-    authToken: Protocol.Network.CookieParam[];
+    authToken: Cookie[];
     expiration: number;
 }
 
