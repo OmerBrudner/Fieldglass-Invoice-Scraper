@@ -24,7 +24,7 @@ const start = async () => {
     // Authenticate and get the token
     const authData = await getFieldglassAuthentication(credentials);
     // Get the invoices within the date range
-    const invoices = await getFieldglassInvoices(authData, FROM_DATE, TO_DATE);
+    const invoices = await getFieldglassInvoices(credentials, authData, FROM_DATE, TO_DATE);
     console.log(invoices);
   }
   catch (error) {

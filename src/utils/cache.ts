@@ -1,6 +1,6 @@
-import { CacheData } from "../models/models.ts";
+import { CacheData, FieldglassCredentials } from "../models/models.ts";
 import * as fs from 'fs/promises';
-
+import { createHash } from "crypto";
 
 const cacheStore: { [key: string]: CacheData } = {};
 // const cacheFilepath = path.resolve('cache.json');
@@ -25,7 +25,15 @@ export async function saveCache(): Promise<void> {
     }
 }
 
-export function cacheGet(key: string): any | null {
+function generateHashKey(credential: FieldglassCredentials): string {
+    const hash = createHash('sha256');
+    hash.update(`${credential.rootUrl}:${credential.userName}:${credential.password}`);
+    return hash.digest('hex'); // Finalize the hash computation and get the result as a hexadecimal string
+}
+
+
+export function cacheGet(credential: FieldglassCredentials): any | null {
+    const key = generateHashKey(credential);
     const cacheData = cacheStore[key];
 
     if (!cacheData) {
@@ -41,8 +49,8 @@ export function cacheGet(key: string): any | null {
     return cacheData.data;
 }
 
-export function cacheSet(key: string, data: any, ttl: number = 1000 * 60 * 10): any { // default ttl is 10 minutes
-
+export function cacheSet(credential: FieldglassCredentials, data: any, ttl: number = 1000 * 60 * 10): any { // default ttl is 10 minutes
+    const key = generateHashKey(credential);
     const expiration = new Date().getTime() + ttl;
     cacheStore[key] = { data, expiration };
     saveCache(); // save cache to file

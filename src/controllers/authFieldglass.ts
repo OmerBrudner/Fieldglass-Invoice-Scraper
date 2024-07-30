@@ -4,18 +4,11 @@ import puppeteer from "puppeteer";
 import { FieldglassCredentials, FieldglassAuthentication } from "src/models/models.ts";
 import { cacheGet, cacheSet } from "../utils/cache.ts";
 import * as Sentry from '@sentry/node';
-import { createHash } from "crypto";
 import { sleep } from "../utils/utilFunctions.ts";
 
-function generateHashKey(credential: FieldglassCredentials): string {
-    const hash = createHash('sha256');
-    hash.update(`${credential.rootUrl}:${credential.userName}:${credential.password}`);
-    return hash.digest('hex'); // Finalize the hash computation and get the result as a hexadecimal string
-}
 
 export async function getFieldglassAuthentication(credentials: FieldglassCredentials): Promise<FieldglassAuthentication> {
-    const uniqueCacheKey = generateHashKey(credentials);
-    const cachedAuthData = cacheGet(uniqueCacheKey);
+    const cachedAuthData = cacheGet(credentials);
     // check if the token is already in the cache
     if (cachedAuthData) {
         return cachedAuthData;
@@ -54,7 +47,7 @@ export async function getFieldglassAuthentication(credentials: FieldglassCredent
         const expiration = now + ttl;
 
         // cache the authentication data
-        cacheSet(uniqueCacheKey, { authToken, expiration }, ttl);
+        cacheSet(credentials, { authToken, expiration }, ttl);
 
         return { authToken, expiration };
 

@@ -1,7 +1,7 @@
 // pagination
 // error handling מקרי קצה
-// fix the dates
 // fix the auth maintainance
+// functions for dropdown and filters
 
 
 

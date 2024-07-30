@@ -1,8 +1,9 @@
 import puppeteer from "puppeteer";
-import { FieldglassAuthentication, MontoInvoice } from "src/models/models.ts";
+import { FieldglassAuthentication, MontoInvoice, FieldglassCredentials } from "src/models/models.ts";
 import { getFieldglassInvoiceDetails, mapFieldglassToMontoInvoice } from "./invoiceServices.ts";
 import { sleep } from "../utils/utilFunctions.ts";
 import fetch from "node-fetch";
+import { cacheSet } from "../utils/cache.ts";
 
 /**
  * using Puppeteer to fetch and parse HTML, and Cheerio to process it
@@ -12,7 +13,7 @@ import fetch from "node-fetch";
  * @returns invoices of type MontoInvoice[]
  */
 export async function getFieldglassInvoices(
-    authentication: FieldglassAuthentication, fromDate: string, toDate: string):
+    credentials: FieldglassCredentials, authentication: FieldglassAuthentication, fromDate: string, toDate: string):
     Promise<MontoInvoice[]> {
 
     let invoices: MontoInvoice[] = [];
@@ -27,8 +28,6 @@ export async function getFieldglassInvoices(
     await page.goto(process.env.FG_INVOICES_URL!, {
         waitUntil: "networkidle2"
     });
-
-    // authToken = await page.cookies()
 
     // Input the date range for filtering invoices
     await page.waitForSelector('input[name="filterStartDate"]').then(async (el) => {
@@ -57,6 +56,16 @@ export async function getFieldglassInvoices(
     await sleep(1);
 
     await page.waitForSelector('.jqxGridParent.fd-table');
+
+    // Get the new cookies after the page is loaded and update the auth token in the cache
+    const ttl = 5 * 60 * 1000;
+    const now = new Date().getTime();
+    const expiration = now + ttl;
+    // cache the authentication data
+    // cacheSet(uniqueCacheKey, { authToken, expiration }, ttl);
+    const authToken = await page.cookies();
+    cacheSet(credentials, { authToken, expiration }, ttl);
+
     // Extract invoice links from the table
     const invoicesLinks = await page.evaluate(() => {
         const links = Array.from(document.querySelectorAll('.jqxGridParent.fd-table .archiveLink'));
