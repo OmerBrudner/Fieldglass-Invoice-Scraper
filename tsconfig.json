@@ -107,5 +107,5 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "include": [
-    "src/**/*.ts"  ]
+    "src/**/*.ts", "src-base-link/utils.ts", "src-base-link/types.ts", "src-base-link/scraper.ts", "src-base-link/new-cache.ts", "src-base-link/input.ts", "src-base-link/constants.ts"  ]
 }
