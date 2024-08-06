@@ -58,6 +58,8 @@ export type FieldglassCredentials = {
 
 export type FieldglassAuthentication = {
     authToken: Cookie[];
+    // sqjy: string;
+    // __cid: string;
     expiration: number;
 }
 
@@ -68,4 +70,9 @@ export type InvoiceFilters = {
     status?: MontoInvoiceStatus;
 }
 
+// export interface FgWindow extends Window {
+//     _CSRF_TOKEN_VALUE: string;
+//     _API_TOKEN_VALUE: string;
+//     __cid: string;
+// }
 

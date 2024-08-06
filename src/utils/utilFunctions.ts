@@ -7,19 +7,17 @@ export async function sleep(seconds: number): Promise<void> {
 
 // creating an object to map the status text to the enum
 export const mapStatusObject: Record<string, MontoInvoiceStatus> = {
-    // "Aprroval Paused": ???
+    "Aprroval Paused": MontoInvoiceStatus.REJECTED,
     Approved: MontoInvoiceStatus.APPROVED,
-    // Consolidated: ???
-    // Draft: ???
+    Consolidated: MontoInvoiceStatus.APPROVED,
+    // Draft: ??? // not needed
     Paid: MontoInvoiceStatus.PAID,
-    // "Payment Pending": ???
-    // "Payment Review": ???
+    "Payment Pending": MontoInvoiceStatus.PENDING_APPROVAL,
+    "Payment Review": MontoInvoiceStatus.PENDING_APPROVAL,
     "Pending Approval": MontoInvoiceStatus.PENDING_APPROVAL,
-    // "Pending Consolidation": ???
-    // "Pending SAP Quality Review": ???
+    "Pending Consolidation": MontoInvoiceStatus.PENDING_APPROVAL,
+    "Pending SAP Quality Review": MontoInvoiceStatus.PENDING_APPROVAL,
     Rejected: MontoInvoiceStatus.REJECTED,
-
-    // No Canceled in the dropdown
 }
 
 export function mapStatusTextToEnum(statusText: string): MontoInvoiceStatus {
@@ -29,16 +27,6 @@ export function mapStatusTextToEnum(statusText: string): MontoInvoiceStatus {
     }
     return mappedStatus as MontoInvoiceStatus;
 }
-
-// /**
-//  * Parses a date string in 'MM/DD/YYYY' format to 'YYYY-MM-DD' format.
-//  * @param dateString - The date string to parse.
-//  * @returns The date string in 'YYYY-MM-DD' format.
-//  */
-// export function parseDate(dateString: string): Date {
-//     const [month, day, year] = dateString.split('/');
-//     return new Date(`${year}-${month}-${day}`);
-// }
 
 /**
  * Extracts data from the script content 
@@ -80,3 +68,7 @@ export function extractDataFromScript(scriptContent: string): { status: string; 
     };
 }
 
+export function convertDateFormat(dateString: string): string {
+    const [year, month, day] = dateString.split("-");
+    return `${month}/${day}/${year}`;
+  }

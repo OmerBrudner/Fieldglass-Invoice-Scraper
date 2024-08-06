@@ -2,6 +2,44 @@ import { FieldglassInvoice, MontoInvoice } from "../models/models.ts";
 import * as cheerio from 'cheerio';
 import { mapStatusTextToEnum, extractDataFromScript } from '../utils/utilFunctions.ts';
 import * as Sentry from '@sentry/node';
+import puppeteer from "puppeteer";
+import { sleep } from "../utils/utilFunctions.ts";
+
+/**
+ * Set date filters on the Fieldglass page.
+ * @param page Puppeteer Page object.
+ * @param fromDate Start date for filtering.
+ * @param toDate End date for filtering.
+ */
+export async function setDateFilters(page: puppeteer.Page, fromDate: string, toDate: string): Promise<void> {
+    // input the date range for filtering invoices
+    await page.waitForSelector('input[name="filterStartDate"]').then(async (el) => {
+        await el!.click({ clickCount: 3 });
+        await el!.type(fromDate.replace(/-/g, '/'));
+    });
+    await page.waitForSelector('input[name="filterEndDate"]').then(async (el) => {
+        await el!.click({ clickCount: 3 });
+        await el!.type(toDate.replace(/-/g, '/'));
+    });
+
+    await page.click('.ttFilterButton');
+
+    // Sleep function to wait for the page to load
+    await sleep(3);
+}
+
+/**
+ * Select the dropdown list to show all invoices on the Fieldglass page.
+ * @param page Puppeteer Page object.
+ */
+export async function selectDropdown(page: puppeteer.Page): Promise<void> {
+    const dropdown_list = await page.waitForSelector('#dropdownlistWrappergridpagerlistpast_invoice_supplier_list', { visible: true });
+    await dropdown_list!.click();
+    await page.waitForSelector('#listitem7innerListBoxgridpagerlistpast_invoice_supplier_list > span', { visible: true });
+    await sleep(1);
+    await page.click('#listitem7innerListBoxgridpagerlistpast_invoice_supplier_list > span');
+    await sleep(1);
+}
 
 /**
  * Parses the HTML content of an invoice page and extracts the invoice details.
@@ -77,3 +115,61 @@ export function mapFieldglassToMontoInvoice(fieldglassInvoice: FieldglassInvoice
     } as MontoInvoice;
 }
 
+/**
+ * Navigates to the next page on the Fieldglass invoices table.
+ * @param page Puppeteer Page object.
+ * @returns A boolean indicating if there are more pages to navigate to.
+ */
+export async function navigateToNextpage(page: puppeteer.Page): Promise<boolean> {
+    try {
+        // Get the current and total elements text
+        const pageInfoText = await page.evaluate(() => {
+            const element = document.querySelector('div[style*="margin-right: 7px; float: right;"]');
+            if (!element || !element.textContent) {
+                Sentry.captureException(new Error('Page info element not found or has no text content'));
+                throw new Error('Page info element not found or has no text content');
+            }
+            return element.textContent.trim();
+        });
+
+        // Define a regular expression to extract numbers
+        const pageInfoRegex = /(\d+)-(\d+) of (\d+)/;
+        // Match the text content against the regular expression
+        const match = pageInfoText.match(pageInfoRegex);
+
+        if (match) {
+            // Extract the current end index and total number
+            const currentEnd = parseInt(match[2], 10);
+            const total = parseInt(match[3], 10);
+
+            // Determine if there are more pages
+            if (currentEnd >= total) {
+                return false;
+            } else {
+                try {
+                    const nextPageButton = await page.waitForSelector('div[title="Next"]', { visible: true, timeout: 10000 });
+                    if (nextPageButton) {
+                        await nextPageButton.click();
+                        await page.waitForSelector('.jqxGridParent.fd-table');
+                        await sleep(1);
+                        return true;
+                    } else {
+                        console.error('Next page button not found or not clickable');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Next page button not found or not clickable:', error);
+                    return false;
+                }
+            }
+        } else {
+            Sentry.captureException(new Error('Unable to parse page info'));
+            console.error('Unable to parse page info`:', pageInfoText);
+            return false;
+        }
+    } catch (error) {
+        Sentry.captureException(error);
+        console.error('Error during navigation:', error);
+        return false;
+    }
+}

@@ -4,7 +4,7 @@ import puppeteer from "puppeteer";
 import { FieldglassCredentials, FieldglassAuthentication } from "src/models/models.ts";
 import { cacheGet, cacheSet } from "../utils/cache.ts";
 import * as Sentry from '@sentry/node';
-import { sleep } from "../utils/utilFunctions.ts";
+import { sleep } from "../utils/utilFunctions.ts"; ``
 
 
 export async function getFieldglassAuthentication(credentials: FieldglassCredentials): Promise<FieldglassAuthentication> {
@@ -36,7 +36,13 @@ export async function getFieldglassAuthentication(credentials: FieldglassCredent
             page.click('button[type="submit"]')
         ]);
 
-        const authToken = await page.cookies();
+        const authToken = await page.cookies()
+        // for the api try
+        // const authToken = await page.cookies().then(cookies => {
+        //     return cookies.reduce((acc, v) => acc += `${v.name}=${v.value}; `, '');
+        // });;
+        // const sqjy = await page.evaluate(() => (window as unknown as FgWindow)._CSRF_TOKEN_VALUE);
+        // const __cid = await page.evaluate(() => (window as unknown as FgWindow).__cid);
 
         if (!authToken) {
             Sentry.captureException(new Error("Authentication failed"));
